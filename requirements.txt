@@ -1,27 +1,16 @@
-# RehabSlash — Python Requirements
-# Install with: pip install -r requirements.txt
-
 # Core
 numpy>=1.24.0
-pandas>=2.0.0
-matplotlib>=3.7.0
 
-# Computer Vision
+# Computer Vision (only if used in API)
 opencv-python>=4.8.0
 mediapipe>=0.10.0
-
-# Game Engine
 
 # Report generation
 reportlab>=4.0.0
 
-# Requests prints a dependency warning with `chardet>=6` (it expects `<6`).
+# Fix dependency warning
 chardet<6
 
-# Machine Learning (for future gesture ML classifier)
-tensorflow>=2.13.0
-scikit-learn>=1.3.0
+# Backend
 flask
 gunicorn
-# Database (built-in sqlite3 — no install needed)
-# firebase-admin>=6.2.0   # Uncomment for cloud sync (future work)
