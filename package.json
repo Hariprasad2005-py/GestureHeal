@@ -1,0 +1,14 @@
+{
+  "name": "rehabslash-launcher",
+  "version": "1.0.0",
+  "description": "Electron launcher for RehabSlash",
+  "main": "main.js",
+  "author": "RehabSlash Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^30.0.0"
+  }
+}

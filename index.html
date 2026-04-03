@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GestureHeal: Zero-Hardware Neurological Rehabilitation</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white: #ffffff;
+  --off-white: #f8f9fc;
+  --gray-50: #f1f3f7;
+  --gray-100: #e4e8f0;
+  --gray-200: #c8d0e0;
+  --gray-400: #8896b0;
+  --gray-500: #6b7a99;
+  --gray-600: #4a5468;
+  --gray-700: #374061;
+  --gray-800: #1e2535;
+  --gray-900: #0f1420;
+  --blue-50: #eff4ff;
+  --blue-100: #dce8ff;
+  --blue-400: #5b8ef8;
+  --blue-500: #3b72f5;
+  --blue-600: #2558e8;
+  --blue-700: #1a44cc;
+  --blue-900: #0c1f6b;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --green-400: #34d399;
+  --green-500: #10b981;
+  --amber-400: #fbbf24;
+  --violet-400: #a78bfa;
+  --rose-400: #fb7185;
+  --font-display: 'Sora', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+  --shadow-sm: 0 1px 3px rgba(15,20,40,0.06), 0 1px 2px rgba(15,20,40,0.04);
+  --shadow-md: 0 4px 16px rgba(15,20,40,0.08), 0 2px 6px rgba(15,20,40,0.05);
+  --shadow-lg: 0 16px 48px rgba(15,20,40,0.12), 0 4px 14px rgba(15,20,40,0.06);
+  --shadow-xl: 0 32px 80px rgba(15,20,40,0.16);
+  --shadow-blue: 0 8px 32px rgba(59,114,245,0.28);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--white);
+  color: var(--gray-800);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Utility ── */
+.hidden { display: none !important; }
+
+/* ══════════════════════════════════════════════
+   NAV
+══════════════════════════════════════════════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(200,208,224,0.4);
+  transition: box-shadow 0.3s;
+}
+.nav-inner {
+  max-width: 1200px; margin: 0 auto; padding: 0 2rem;
+  height: 68px; display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; cursor: pointer; }
+.nav-logo-icon {
+  width: 36px; height: 36px; background: var(--blue-600);
+  border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; color: white; font-size: 18px;
+}
+.nav-logo-text { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--blue-700); letter-spacing: -0.02em; }
+.nav-links { display: flex; align-items: center; gap: 2.5rem; list-style: none; }
+.nav-links a { font-size: 0.875rem; font-weight: 500; color: var(--gray-600); text-decoration: none; letter-spacing: -0.01em; transition: color 0.2s; }
+.nav-links a:hover { color: var(--blue-600); }
+.btn-nav {
+  padding: 0.55rem 1.4rem; background: var(--blue-600); color: white;
+  border: none; border-radius: var(--radius-sm); font-family: var(--font-body);
+  font-size: 0.875rem; font-weight: 600; cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: var(--shadow-blue); letter-spacing: -0.01em;
+}
+.btn-nav:hover { background: var(--blue-700); transform: translateY(-1px); }
+.btn-nav-ghost { background: rgba(74,84,104,0.10); color: var(--gray-800); box-shadow: none; }
+.btn-nav-ghost:hover { background: rgba(74,84,104,0.18); box-shadow: none; }
+
+/* ══════════════════════════════════════════════
+   LANDING — HERO
+══════════════════════════════════════════════ */
+.hero-noise {
+  position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: -1; animation: orb-float 8s ease-in-out infinite; }
+.orb-1 { width: 500px; height: 500px; background: rgba(59,114,245,0.08); top: -100px; left: -150px; }
+.orb-2 { width: 400px; height: 400px; background: rgba(20,184,166,0.08); top: 100px; right: -100px; animation-delay: -3s; }
+.orb-3 { width: 300px; height: 300px; background: rgba(167,139,250,0.06); bottom: 0; left: 50%; animation-delay: -5s; }
+@keyframes orb-float { 0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-20px) scale(1.04);} }
+
+.hero {
+  padding: 130px 2rem 80px; max-width: 1200px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; position: relative;
+}
+.gradient-text {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 4.8vw, 3.2rem);
+  font-weight: 800; text-align: center; line-height: 1.18; letter-spacing: -0.04em;
+  background: linear-gradient(105deg, #1e3a8a 0%, #2563eb 30%, #06b6d4 55%, #10b981 80%, #22c55e 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; color: transparent; display: inline-block;
+}
+.sub-line {
+  display: inline-block;
+  font-size: clamp(1.55rem, 3.6vw, 2.35rem); font-weight: 700; margin-top: 0.2em;
+  background: linear-gradient(105deg, #06b6d4 0%, #10b981 50%, #4f46e5 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+}
+.hero-authors { font-size: 20px; font-weight: 600; margin-top: 20px; margin-bottom: 10px; }
+.hero-authors strong { font-size: 32px; font-weight: 900; }
+.hero-authors strong span { color: #2563EB; }
+.hero-desc { font-size: 1.1rem; line-height: 1.75; color: var(--gray-600); max-width: 640px; margin-bottom: 2.5rem; font-weight: 400; animation: fade-up 0.6s 0.2s ease both; }
+.hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; animation: fade-up 0.6s 0.25s ease both; }
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0.85rem 2rem; background: var(--blue-600); color: white;
+  border: none; border-radius: var(--radius-md); font-family: var(--font-body);
+  font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  letter-spacing: -0.01em; box-shadow: var(--shadow-blue); transition: all 0.2s;
+}
+.btn-primary:hover { background: var(--blue-700); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(59,114,245,0.36); }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0.85rem 2rem; background: var(--gray-50); color: var(--gray-700);
+  border: 1.5px solid var(--gray-100); border-radius: var(--radius-md);
+  font-family: var(--font-body); font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; letter-spacing: -0.01em; transition: all 0.2s;
+}
+.btn-ghost:hover { background: var(--gray-100); transform: translateY(-2px); }
+.hero-visual {
+  margin-top: 4rem; width: 100%; max-width: 1000px;
+  border-radius: var(--radius-xl); overflow: hidden;
+  box-shadow: var(--shadow-xl); border: 1px solid var(--gray-100);
+  animation: fade-up 0.8s 0.35s ease both; position: relative;
+}
+.hero-visual img { width: 100%; display: block; aspect-ratio: 16/7; object-fit: cover; }
+.hero-visual-overlay { position: absolute; inset: 0; background: linear-gradient(to top,rgba(15,20,40,0.55) 0%,transparent 50%); }
+.hero-visual-caption { position: absolute; bottom: 2rem; left: 2rem; color: white; }
+.hero-visual-caption .label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.7; margin-bottom: 0.4rem; }
+.hero-visual-caption h3 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+
+/* ══════════════════════════════════════════════
+   STATS STRIP
+══════════════════════════════════════════════ */
+.stats-strip { background: var(--gray-900); padding: 2rem; }
+.stats-inner { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; }
+.stat-item { text-align: center; padding: 1.5rem 1rem; border-right: 1px solid rgba(255,255,255,0.07); }
+.stat-item:last-child { border-right: none; }
+.stat-num {
+  font-family: var(--font-display); font-size: 2.2rem; font-weight: 800; letter-spacing: -0.04em;
+  background: linear-gradient(135deg, var(--blue-400), var(--teal-400));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.3rem;
+}
+.stat-label { font-size: 0.8rem; color: rgba(255,255,255,0.45); font-weight: 500; letter-spacing: 0.02em; }
+
+/* ══════════════════════════════════════════════
+   SECTIONS
+══════════════════════════════════════════════ */
+section { padding: 6rem 2rem; }
+.section-inner { max-width: 1200px; margin: 0 auto; }
+.section-label { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--blue-500); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+.section-label::before { content: ''; display: inline-block; width: 20px; height: 2px; background: var(--blue-500); }
+h2 { font-family: var(--font-display); font-size: clamp(1.8rem,3.5vw,2.8rem); font-weight: 800; letter-spacing: -0.04em; color: var(--gray-900); line-height: 1.15; }
+.section-sub { font-size: 1.05rem; color: var(--gray-500); line-height: 1.7; max-width: 560px; margin-top: 0.75rem; }
+
+/* ══════════════════════════════════════════════
+   BENTO / FEATURES
+══════════════════════════════════════════════ */
+.features-section { background: var(--off-white); }
+.features-header { margin-bottom: 3rem; }
+.bento { display: grid; grid-template-columns: repeat(12,1fr); gap: 1.25rem; }
+.bento-card { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--gray-100); overflow: hidden; transition: box-shadow 0.3s, transform 0.3s; }
+.bento-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+.card-a { grid-column: span 8; display: flex; align-items: stretch; }
+.card-b { grid-column: span 4; }
+.card-c { grid-column: span 4; }
+.card-d { grid-column: span 8; background: var(--gray-900); }
+.card-body { padding: 2.5rem; flex: 1; }
+.card-img { width: 42%; flex-shrink: 0; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 1.5rem; }
+.icon-blue  { background: var(--blue-50); color: var(--blue-600); }
+.icon-teal  { background: rgba(20,184,166,0.1); color: var(--teal-500); }
+.icon-amber { background: rgba(251,191,36,0.12); color: var(--amber-400); }
+.icon-white { background: rgba(255,255,255,0.12); color: white; }
+.card-title { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; color: var(--gray-900); margin-bottom: 0.75rem; }
+.card-d .card-title, .card-d .card-body p { color: rgba(255,255,255,0.9); }
+.card-body p { font-size: 0.9rem; color: var(--gray-500); line-height: 1.7; }
+.card-d-inner { display: flex; align-items: stretch; height: 100%; }
+.card-d-img { width: 45%; flex-shrink: 0; position: relative; }
+.card-d-img img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0.35; }
+.cam-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 5rem; opacity: 0.12; background: rgba(255,255,255,0.04); }
+
+/* ══════════════════════════════════════════════
+   HOW IT WORKS
+══════════════════════════════════════════════ */
+.hiw-section { background: var(--white); }
+.hiw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center; }
+.steps { display: flex; flex-direction: column; gap: 2.5rem; margin-top: 2.5rem; }
+.step { display: flex; gap: 1.5rem; }
+.step-num { flex-shrink: 0; width: 44px; height: 44px; background: var(--blue-600); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 1rem; font-weight: 800; box-shadow: var(--shadow-blue); }
+.step-content h4 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; letter-spacing: -0.03em; color: var(--gray-900); margin-bottom: 0.4rem; }
+.step-content p { font-size: 0.9rem; color: var(--gray-500); line-height: 1.7; }
+.hiw-visual { position: relative; }
+.hiw-visual::before { content:''; position:absolute; inset:-20px; background:linear-gradient(135deg,var(--blue-50),rgba(20,184,166,0.06)); border-radius:3rem; transform:rotate(2deg); z-index:0; }
+.hiw-img-wrap { position: relative; z-index: 1; border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-xl); }
+.hiw-img-wrap img { width: 100%; display: block; aspect-ratio: 4/5; object-fit: cover; }
+.float-badge { position:absolute; background:white; border-radius:var(--radius-md); padding:0.75rem 1rem; box-shadow:var(--shadow-lg); display:flex; align-items:center; gap:0.6rem; font-size:0.8rem; font-weight:600; color:var(--gray-800); z-index:2; animation:badge-float 4s ease-in-out infinite; }
+.float-badge-1 { top:1.5rem; right:-1.5rem; animation-delay:0s; }
+.float-badge-2 { bottom:2rem; left:-1.5rem; animation-delay:-2s; }
+.float-badge .dot-green { width:8px; height:8px; background:var(--green-500); border-radius:50%; flex-shrink:0; }
+.float-badge .dot-blue  { width:8px; height:8px; background:var(--blue-500); border-radius:50%; flex-shrink:0; }
+@keyframes badge-float { 0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);} }
+
+/* ══════════════════════════════════════════════
+   DEMO
+══════════════════════════════════════════════ */
+.demo-section { background: var(--gray-50); }
+.demo-header { text-align: center; max-width: 580px; margin: 0 auto 3rem; }
+.demo-card { background: var(--white); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-xl); border: 1px solid var(--gray-100); display: grid; grid-template-columns: 1.4fr 1fr; max-width: 900px; margin: 0 auto; }
+.demo-screen { background: var(--gray-900); position: relative; aspect-ratio: 4/3; }
+.demo-screen img { width: 100%; height: 100%; object-fit: cover; opacity: 0.55; display: block; }
+.demo-hud { position:absolute; top:1rem; left:1rem; display:flex; gap:0.6rem; }
+.hud-chip { padding:5px 12px; border-radius:6px; font-family:var(--font-mono); font-size:0.72rem; font-weight:500; background:rgba(255,255,255,0.12); backdrop-filter:blur(8px); color:white; border:1px solid rgba(255,255,255,0.15); }
+.hud-chip.green { color:var(--teal-400); }
+.demo-play { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+.play-btn { width:72px; height:72px; background:var(--blue-600); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 12px rgba(59,114,245,0.2); cursor:pointer; border:none; color:white; font-size:28px; transition:transform 0.2s,box-shadow 0.2s; }
+.play-btn:hover { transform:scale(1.1); box-shadow:0 0 0 18px rgba(59,114,245,0.15); }
+.demo-info { padding:2.5rem; display:flex; flex-direction:column; justify-content:center; }
+.demo-info h3 { font-family:var(--font-display); font-size:1.4rem; font-weight:700; letter-spacing:-0.03em; color:var(--gray-900); margin-bottom:1.5rem; }
+.feature-list { list-style:none; display:flex; flex-direction:column; gap:1rem; }
+.feature-list li { display:flex; align-items:flex-start; gap:0.75rem; font-size:0.875rem; color:var(--gray-600); line-height:1.6; }
+.check-icon { color:var(--green-500); font-size:1.1rem; flex-shrink:0; margin-top:1px; }
+.btn-outline { display:inline-flex; align-items:center; gap:8px; margin-top:2rem; padding:0.75rem 1.5rem; border:1.5px solid var(--blue-600); color:var(--blue-600); background:transparent; border-radius:var(--radius-md); font-family:var(--font-body); font-size:0.875rem; font-weight:600; cursor:pointer; transition:all 0.2s; letter-spacing:-0.01em; }
+.btn-outline:hover { background:var(--blue-50); transform:translateY(-2px); }
+
+/* ══════════════════════════════════════════════
+   BENEFITS
+══════════════════════════════════════════════ */
+.benefits-section { background: var(--white); }
+.benefits-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1.25rem; margin-top:3rem; }
+.benefit-card { padding:2rem; border-radius:var(--radius-lg); background:var(--gray-50); border:1px solid var(--gray-100); transition:all 0.3s; cursor:default; }
+.benefit-card:hover { background:var(--white); box-shadow:var(--shadow-lg); transform:translateY(-4px); border-color:var(--blue-100); }
+.benefit-icon { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:1.25rem; transition:transform 0.3s; }
+.benefit-card:hover .benefit-icon { transform:scale(1.1); }
+.benefit-card h4 { font-family:var(--font-display); font-size:1.05rem; font-weight:700; letter-spacing:-0.02em; color:var(--gray-900); margin-bottom:0.5rem; }
+.benefit-card p { font-size:0.85rem; color:var(--gray-500); line-height:1.7; }
+
+/* ══════════════════════════════════════════════
+   CTA
+══════════════════════════════════════════════ */
+.cta-section { padding: 4rem 2rem; }
+.cta-inner { max-width:1100px; margin:0 auto; background:linear-gradient(135deg,var(--blue-700) 0%,var(--blue-600) 50%,var(--teal-500) 100%); border-radius:var(--radius-xl); padding:5rem 4rem; text-align:center; position:relative; overflow:hidden; box-shadow:var(--shadow-xl); }
+.cta-inner::before { content:''; position:absolute; top:-60%; right:-20%; width:600px; height:600px; background:rgba(255,255,255,0.06); border-radius:50%; }
+.cta-inner::after  { content:''; position:absolute; bottom:-40%; left:-10%; width:400px; height:400px; background:rgba(255,255,255,0.04); border-radius:50%; }
+.cta-inner h2 { color:white; font-size:clamp(2rem,4vw,3rem); position:relative; z-index:1; }
+.cta-inner p { color:rgba(255,255,255,0.75); font-size:1.05rem; max-width:520px; margin:1rem auto 2.5rem; line-height:1.7; position:relative; z-index:1; }
+.cta-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; position:relative; z-index:1; }
+.btn-white { display:inline-flex; align-items:center; gap:8px; padding:0.9rem 2rem; background:white; color:var(--blue-700); border:none; border-radius:var(--radius-md); font-family:var(--font-body); font-size:0.95rem; font-weight:700; cursor:pointer; letter-spacing:-0.01em; transition:all 0.2s; box-shadow:0 4px 16px rgba(0,0,0,0.2); }
+.btn-white:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.25); }
+.btn-white-ghost { display:inline-flex; align-items:center; gap:8px; padding:0.9rem 2rem; background:rgba(255,255,255,0.1); color:white; border:1.5px solid rgba(255,255,255,0.3); border-radius:var(--radius-md); font-family:var(--font-body); font-size:0.95rem; font-weight:600; cursor:pointer; letter-spacing:-0.01em; transition:all 0.2s; backdrop-filter:blur(8px); }
+.btn-white-ghost:hover { background:rgba(255,255,255,0.18); transform:translateY(-2px); }
+
+/* ══════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════ */
+footer { background:var(--gray-900); color:rgba(255,255,255,0.6); padding:4rem 2rem 2rem; }
+.footer-inner { max-width:1200px; margin:0 auto; }
+.footer-top { display:grid; grid-template-columns:1.4fr repeat(4,1fr); gap:3rem; margin-bottom:3rem; }
+.footer-brand p { font-size:0.82rem; color:rgba(255,255,255,0.4); line-height:1.7; margin:1rem 0; max-width:220px; }
+.footer-brand .dev-by  { font-size:0.75rem; color:rgba(255,255,255,0.35); margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.1em; }
+.footer-brand .dev-name { font-size:0.85rem; color:var(--blue-400); font-weight:600; }
+.footer-logo { display:flex; align-items:center; gap:10px; margin-bottom:0; }
+.footer-logo-icon { width:32px; height:32px; background:var(--blue-600); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; color:white; }
+.footer-logo-text { font-family:var(--font-display); font-size:1.1rem; font-weight:700; color:white; letter-spacing:-0.02em; }
+.footer-col h5 { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:rgba(255,255,255,0.3); margin-bottom:1.25rem; }
+.footer-col a { display:block; color:rgba(255,255,255,0.55); text-decoration:none; font-size:0.875rem; margin-bottom:0.75rem; transition:color 0.2s; }
+.footer-col a:hover { color:white; }
+.footer-bottom { padding-top:2rem; border-top:1px solid rgba(255,255,255,0.07); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+.footer-bottom span { font-size:0.78rem; color:rgba(255,255,255,0.3); }
+.footer-social { display:flex; gap:1rem; }
+.social-btn { width:34px; height:34px; border-radius:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; cursor:pointer; color:rgba(255,255,255,0.45); font-size:14px; transition:all 0.2s; text-decoration:none; }
+.social-btn:hover { background:var(--blue-600); color:white; border-color:var(--blue-600); }
+
+/* ══════════════════════════════════════════════
+   INTAKE FORM  (doc3)
+══════════════════════════════════════════════ */
+.intake-wrap { max-width: 1100px; margin: 0 auto; padding: 110px 2rem 80px; }
+.intake-header { margin-bottom: 2rem; }
+.intake-header h1 { font-family:var(--font-display); font-size:clamp(2rem,3.6vw,2.6rem); font-weight:900; letter-spacing:-0.04em; color:var(--gray-900); }
+.intake-header p { margin-top:0.6rem; color:var(--gray-600); line-height:1.7; max-width:620px; }
+.intake-card { background:var(--white); border:1px solid rgba(200,208,224,0.6); border-radius:var(--radius-lg); box-shadow:var(--shadow-md); padding:1.75rem; margin-bottom:1.25rem; }
+.intake-card h3 { font-family:var(--font-display); font-size:1.25rem; font-weight:800; letter-spacing:-0.03em; color:var(--gray-900); margin-bottom:1.25rem; }
+.fields { display:grid; grid-template-columns:repeat(12,1fr); gap:1rem; }
+.field { grid-column:span 6; display:flex; flex-direction:column; gap:0.45rem; }
+.field.full { grid-column:span 12; }
+.label { font-size:0.85rem; font-weight:700; color:var(--gray-600); letter-spacing:-0.01em; }
+.control { width:100%; padding:0.8rem 0.9rem; border-radius:12px; border:1px solid rgba(200,208,224,0.9); background:rgba(241,243,247,0.55); color:var(--gray-900); outline:none; font-family:var(--font-body); font-size:0.95rem; transition:border-color 0.2s,box-shadow 0.2s,background 0.2s; }
+.control:focus { border-color:rgba(59,114,245,0.7); box-shadow:0 0 0 4px rgba(59,114,245,0.14); background:rgba(255,255,255,0.9); }
+textarea.control { resize:vertical; }
+.radio-row { display:flex; flex-wrap:wrap; gap:0.65rem; padding-top:0.25rem; }
+.chip { display:inline-flex; align-items:center; gap:8px; padding:0.55rem 0.9rem; border-radius:999px; border:1px solid rgba(200,208,224,0.9); background:rgba(255,255,255,0.9); cursor:pointer; font-weight:700; font-size:0.9rem; color:var(--gray-700); transition:background 0.2s,border-color 0.2s,transform 0.15s; }
+.chip:hover { transform:translateY(-1px); border-color:rgba(59,114,245,0.5); }
+.chip input { display:none; }
+.chip:has(input:checked) { background:rgba(59,114,245,0.12); border-color:rgba(59,114,245,0.6); color:var(--blue-700); }
+.error-box { border:1px solid rgba(186,26,26,0.25); background:rgba(255,218,214,0.6); color:#93000a; border-radius:14px; padding:0.85rem 1rem; margin-bottom:1.25rem; font-weight:700; }
+.intake-actions { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-top:1.25rem; }
+.link-btn { border:none; background:transparent; color:var(--blue-700); font-weight:800; cursor:pointer; font-family:var(--font-body); font-size:0.95rem; padding:0.35rem 0.2rem; }
+.link-btn:hover { text-decoration:underline; }
+
+/* ══════════════════════════════════════════════
+   ANIMATIONS / REVEALS
+══════════════════════════════════════════════ */
+@keyframes fade-up { from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);} }
+.reveal { opacity:0; transform:translateY(24px); transition:opacity 0.65s ease,transform 0.65s ease; }
+.reveal.visible { opacity:1; transform:none; }
+.reveal-delay-1 { transition-delay:0.1s; }
+.reveal-delay-2 { transition-delay:0.2s; }
+.reveal-delay-3 { transition-delay:0.3s; }
+.reveal-delay-4 { transition-delay:0.4s; }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media (max-width:1024px) {
+  .bento { grid-template-columns:1fr 1fr; }
+  .card-a,.card-b,.card-c,.card-d { grid-column:span 2; }
+  .card-a { flex-direction:column; }
+  .card-img { width:100%; height:200px; }
+  .benefits-grid { grid-template-columns:1fr 1fr; }
+  .footer-top { grid-template-columns:1fr 1fr; }
+}
+@media (max-width:768px) {
+  .nav-links { display:none; }
+  section { padding:4rem 1.5rem; }
+  .hiw-grid { grid-template-columns:1fr; }
+  .demo-card { grid-template-columns:1fr; }
+  .demo-screen { aspect-ratio:16/9; }
+  .bento { grid-template-columns:1fr; }
+  .card-a,.card-d { flex-direction:column; }
+  .card-img,.card-d-img { width:100%; height:180px; }
+  .stats-inner { grid-template-columns:1fr 1fr; }
+  .benefits-grid { grid-template-columns:1fr; }
+  .cta-inner { padding:3rem 1.5rem; }
+  .footer-top { grid-template-columns:1fr 1fr; }
+  .float-badge { display:none; }
+  h1 { font-size:2.2rem; }
+  .field { grid-column:span 12; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero-noise"></div>
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║                 LANDING VIEW                     ║
+     ╚══════════════════════════════════════════════════╝ -->
+<div id="landing-view">
+
+  <nav id="landing-nav">
+    <div class="nav-inner">
+      <a class="nav-logo" href="#">
+        <div class="nav-logo-icon">✦</div>
+        <span class="nav-logo-text">GestureHeal</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#demo">Demo</a></li>
+        <li><a href="#benefits">Benefits</a></li>
+      </ul>
+      <button class="btn-nav js-start-rehab" type="button">Start Rehab</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section style="padding:0;background:var(--white);">
+    <div class="hero">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <h1 class="gradient-text">
+        GestureHeal: Zero-Hardware Neurological Rehabilitation <br>
+        <span class="sub-line">Using Computer Vision and Adaptive Gamification</span>
+      </h1>
+      <div class="hero-authors">
+        <span>Developed by</span>
+        <strong>
+          <span>Hariprasad Vittannavar</span> &amp;
+          <span>Lakshitha G H</span>
+        </strong>
+      </div>
+      <p class="hero-desc">An AI-powered system enabling patients to perform upper-limb rehabilitation using webcam-based gesture tracking and gamified exercises. Professional therapy, accessible from your own home.</p>
+      <div class="hero-cta">
+        <button class="btn-primary js-start-rehab" type="button">🚀 Start Rehab</button>
+        <button class="btn-ghost" type="button">▶ View Demo</button>
+      </div>
+      <div class="hero-visual">
+        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0j0jDyWWWMT6Juvz9NTThHpEVNA5kybFyz_mHPz8rEw42iarCtaQSVEGAKrNxwcuV2NuaYoCr12Qr4nIccNuTZU-oup3p7n4dVkXMVImIQhx-qNxX_54o9HkFt619Bn4DsqaTfqebb6Z7wfMvt72qh0HgvAFLOfbadTUIm8gjv0soVuilef0uf1fXaUdvvqQp_CqPYifDoh2zHwUx4TMQ3mSW6EJnySqYdZL6sJVrrQjmt9-ATZff8wQJLXsQ9uBPG_-y1ENseBU" alt="Clinical Accuracy via Computer Vision"/>
+        <div class="hero-visual-overlay"></div>
+        <div class="hero-visual-caption">
+          <div class="label">Interface Preview</div>
+          <h3>Clinical Accuracy via Computer Vision</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <div class="stats-strip">
+    <div class="stats-inner">
+      <div class="stat-item reveal"><div class="stat-num">21</div><div class="stat-label">Hand Keypoints Tracked</div></div>
+      <div class="stat-item reveal reveal-delay-1"><div class="stat-num">0</div><div class="stat-label">External Hardware Required</div></div>
+      <div class="stat-item reveal reveal-delay-2"><div class="stat-num">3×</div><div class="stat-label">Engagement vs. Traditional</div></div>
+      <div class="stat-item reveal reveal-delay-3"><div class="stat-num">Real-time</div><div class="stat-label">Adaptive Difficulty Engine</div></div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <section class="features-section" id="features">
+    <div class="section-inner">
+      <div class="features-header reveal">
+        <div class="section-label">Core Technology</div>
+        <h2>Pioneering Hardware-Free Recovery</h2>
+        <p class="section-sub">Our system replaces expensive specialised equipment with advanced algorithms that understand human movement.</p>
+      </div>
+      <div class="bento">
+        <div class="bento-card card-a reveal">
+          <div class="card-body">
+            <div class="card-icon icon-blue">✋</div>
+            <div class="card-title">Real-time Hand Tracking</div>
+            <p>Leveraging state-of-the-art computer vision to map 21 key points of the hand with sub-millimeter precision, tracking every subtle movement without markers or wearables.</p>
+          </div>
+          <div class="card-img">
+            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9TI1-RWpL0X3Ofbv_ITkHckDwbad999NWW94ZlQhUYo-Bo8UldY25hw46WVhYBDERgzkf0VdPZ2Nwje2KXq5zQCryPzFjjZGQ9nScQWw-ORjlUSxwMxV1QM9tQRsOnPJBXFPUNinIVOwrnb_7wKvG4ge0LAEpiYji4dwSKpeU0-ZQjczlJgt_C0fAwGcQYtF_MjjIzSifqcvHFNsuolCB4iF9a6Ds0ze8A86um9Ngn2nxu4nHemZ4kvl7BLZVjfBH-Q5CEa5lZ94" alt="Hand tracking"/>
+          </div>
+        </div>
+        <div class="bento-card card-b reveal reveal-delay-1" style="padding:2.5rem;">
+          <div class="card-icon icon-teal">🎮</div>
+          <div class="card-title">Gamified Exercises</div>
+          <p>Transforming repetitive therapy into engaging interactive challenges that keep patients motivated for longer, more effective sessions.</p>
+        </div>
+        <div class="bento-card card-c reveal" style="padding:2.5rem;">
+          <div class="card-icon icon-amber">📊</div>
+          <div class="card-title">Progress Tracking</div>
+          <p>Detailed clinical analytics and data-driven insights visualising recovery trends and mobility improvements over time.</p>
+        </div>
+        <div class="bento-card card-d reveal reveal-delay-1">
+          <div class="card-d-inner">
+            <div class="card-body">
+              <div class="card-icon icon-white">📷</div>
+              <div class="card-title">No External Hardware</div>
+              <p>Unlike traditional systems requiring gloves or sensors, GestureHeal works with any standard laptop webcam, making clinical rehab truly portable and cost-effective.</p>
+            </div>
+            <div class="card-d-img"><div class="cam-placeholder">📹</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="hiw-section" id="how-it-works">
+    <div class="section-inner">
+      <div class="hiw-grid">
+        <div>
+          <div class="section-label reveal">Patient Journey</div>
+          <h2 class="reveal">A Three-Step Journey to Mobility</h2>
+          <p class="section-sub reveal" style="max-width:480px;">The system is designed for ease of use by patients of all ages, ensuring the technology never gets in the way of healing.</p>
+          <div class="steps">
+            <div class="step reveal reveal-delay-1">
+              <div class="step-num">1</div>
+              <div class="step-content"><h4>Open the System</h4><p>No installation required. Access your personalised rehab dashboard via any modern web browser on your laptop or tablet.</p></div>
+            </div>
+            <div class="step reveal reveal-delay-2">
+              <div class="step-num">2</div>
+              <div class="step-content"><h4>Perform Guided Gestures</h4><p>Follow on-screen visual cues. Our AI analyses your form and provides real-time corrective feedback through the camera.</p></div>
+            </div>
+            <div class="step reveal reveal-delay-3">
+              <div class="step-num">3</div>
+              <div class="step-content"><h4>Track Improvement</h4><p>Review your session metrics, range-of-motion scores, and celebrate milestones as you regain independence.</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="hiw-visual reveal reveal-delay-2">
+          <div class="hiw-img-wrap">
+            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH-wSx9jhTWJ9kfhFdEp1Q_89O55HDG1B9_wGENHkoT0oeDDmaDNzxa3rS-ggnp_F8l5m4A6jX4HLxQ1dh1QTa1uWukjaEVkpHTBgG0SxFD39VOH9rv_54pEv7QfvJo2Pai_G5jQgQwMTNgBge84POJc5XiRBX4qleMpoK6M-Im7Va68M0g4Ohf3w8U1hinygxNJrI3axsF-QknUNz6mkX0j3anzwNru2WfSTD0_FU5AbjfuprlYqURmhs9Py3IWKiGc2kjFB3BeM" alt="Patient using GestureHeal"/>
+            <div class="float-badge float-badge-1"><div class="dot-green"></div>Live Session Active</div>
+            <div class="float-badge float-badge-2"><div class="dot-blue"></div>ROM: 87° — Improving</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demo -->
+  <section class="demo-section" id="demo">
+    <div class="section-inner">
+      <div class="demo-header reveal">
+        <div class="section-label" style="justify-content:center;">Signature Feature</div>
+        <h2 style="text-align:center">Experience the 'Fruit Ninja' Rehab</h2>
+        <p style="text-align:center;color:var(--gray-500);margin-top:0.75rem;font-size:1rem;line-height:1.7;">Rehabilitation doesn't have to be a chore. Our adaptive game engine turns therapy into play.</p>
+      </div>
+      <div class="demo-card reveal">
+        <div class="demo-screen">
+          <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3aF6G4X1HTEFctkcJQsx3epMhfAxoqYtAJF4x5s_qaSGTBkm1T5HHDS7PnyWqhpplWDTZSBYJYd_FN3pIlRz4xGqi42l7MT7C5SngCVftc_y9QbM36TL-jBoszjHXVIbH3Q-JeGQRzjWVDX_cLnLGdQtYY-ZVkfoO70rwyse_IYZy9OLEx3G2KPvFSF-tg4USoDtqoa3_o9AxNNBk1Z1PAVVnTGcAOWbUVWlTQ6acO-PSJtnshQyEOUsMH3mvVvyMgCuRzrUycEM" alt="Game demo"/>
+          <div class="demo-hud">
+            <div class="hud-chip">Score: 2,450</div>
+            <div class="hud-chip green">Accuracy: 94%</div>
+          </div>
+          <div class="demo-play"><button class="play-btn" type="button">▶</button></div>
+        </div>
+        <div class="demo-info">
+          <h3>Adaptive Motion Engine</h3>
+          <ul class="feature-list">
+            <li><span class="check-icon">✓</span> Dynamic difficulty scaling based on mobility range</li>
+            <li><span class="check-icon">✓</span> Multi-axis tracking for complex arm movements</li>
+            <li><span class="check-icon">✓</span> Instant haptic-style visual feedback on completion</li>
+            <li><span class="check-icon">✓</span> Session data exported as IEEE-ready JSON</li>
+          </ul>
+          <button class="btn-outline js-start-rehab" type="button">Launch Simulation →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits -->
+  <section class="benefits-section" id="benefits">
+    <div class="section-inner">
+      <div class="reveal">
+        <div class="section-label">Impact &amp; Outcome</div>
+        <h2>Why Clinicians Choose GestureHeal</h2>
+      </div>
+      <div class="benefits-grid">
+        <div class="benefit-card reveal reveal-delay-1">
+          <div class="benefit-icon" style="background:var(--blue-50);color:var(--blue-600);">🦾</div>
+          <h4>Improves Mobility</h4>
+          <p>Systematically increases joint flexibility and muscle strength through scientifically-backed movement protocols.</p>
+        </div>
+        <div class="benefit-card reveal reveal-delay-2">
+          <div class="benefit-icon" style="background:rgba(20,184,166,0.1);color:var(--teal-500);">😊</div>
+          <h4>Engaging Therapy</h4>
+          <p>Reduces the psychological burden of rehabilitation by making each session an enjoyable interactive experience.</p>
+        </div>
+        <div class="benefit-card reveal reveal-delay-3">
+          <div class="benefit-icon" style="background:rgba(251,191,36,0.1);color:var(--amber-400);">🏠</div>
+          <h4>Accessible Home Use</h4>
+          <p>Eliminates the need for frequent clinic visits, allowing patients to recover in a comfortable, familiar environment.</p>
+        </div>
+        <div class="benefit-card reveal reveal-delay-4">
+          <div class="benefit-icon" style="background:rgba(167,139,250,0.12);color:var(--violet-400);">📈</div>
+          <h4>Data-driven Insights</h4>
+          <p>Generates comprehensive reports that help doctors monitor remote patients and adjust treatment plans accurately.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-inner reveal">
+      <h2>Ready to Transform Your Recovery?</h2>
+      <p>Join hundreds of patients regaining their independence with the next generation of neurological rehabilitation technology.</p>
+      <div class="cta-btns">
+        <button class="btn-white js-start-rehab" type="button">Get Started Now</button>
+        <button class="btn-white-ghost" type="button">Consult a Specialist</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <div class="footer-logo-icon">✦</div>
+            <span class="footer-logo-text">GestureHeal</span>
+          </div>
+          <p>Zero-Hardware Neurological Rehabilitation Using Computer Vision and Adaptive Gamification.</p>
+          <div class="dev-by">Developed by</div>
+          <div class="dev-name">Hariprasad Vittannavar &amp; Lakshitha G H</div>
+        </div>
+        <div class="footer-col"><h5>Platform</h5><a href="#">Features</a><a href="#">Demo</a><a href="#">Pricing</a></div>
+        <div class="footer-col"><h5>Resources</h5><a href="#">Documentation</a><a href="#">Whitepapers</a><a href="#">Research</a></div>
+        <div class="footer-col"><h5>Company</h5><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Community</a></div>
+        <div class="footer-col"><h5>Contact</h5><a href="#">Support</a><a href="#">Partnership</a><a href="#">Press</a></div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2024 GestureHeal. All Rights Reserved.</span>
+        <div class="footer-social">
+          <a class="social-btn" href="#">🌐</a>
+          <a class="social-btn" href="#">✉</a>
+          <a class="social-btn" href="#">↗</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- /landing-view -->
+
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║               INTAKE VIEW  (doc3)                ║
+     ╚══════════════════════════════════════════════════╝ -->
+<div id="intake-view" class="hidden">
+
+  <nav>
+    <div class="nav-inner">
+      <a class="nav-logo js-back-to-landing" href="#" id="intake-logo">
+        <div class="nav-logo-icon">✦</div>
+        <span class="nav-logo-text">GestureHeal</span>
+      </a>
+      <button class="btn-nav btn-nav-ghost" id="intake-back" type="button">← Back</button>
+    </div>
+  </nav>
+
+  <div class="intake-wrap">
+    <div class="intake-header">
+      <h1>Patient Admission</h1>
+      <p>Please fill all required patient and session details to begin your rehabilitation session.</p>
+    </div>
+
+    <div id="intake-error" class="error-box hidden"></div>
+
+    <form id="intake-form" novalidate>
+
+      <!-- Patient Information -->
+      <div class="intake-card">
+        <h3>Patient Information</h3>
+        <div class="fields">
+          <div class="field">
+            <div class="label">Full Legal Name</div>
+            <input class="control" id="full_name" name="full_name" type="text" placeholder="e.g. John Doe" required />
+          </div>
+          <div class="field">
+            <div class="label">Age</div>
+            <input class="control" id="age" name="age" type="number" min="1" step="1" placeholder="e.g. 45" required />
+          </div>
+          <div class="field">
+            <div class="label">Gender</div>
+            <select class="control" id="gender" name="gender" required>
+              <option value="" selected>Select</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label">Registry / Patient ID</div>
+            <input class="control" id="patient_id" name="patient_id" type="text" placeholder="e.g. P20260403001" required />
+          </div>
+        </div>
+      </div>
+
+      <!-- Clinical Details -->
+      <div class="intake-card">
+        <h3>Clinical Details</h3>
+        <div class="fields">
+          <div class="field">
+            <div class="label">Condition</div>
+            <select class="control" id="condition" name="condition" required>
+              <option value="" selected>Select</option>
+              <option>Hand Surgery</option>
+              <option>Stroke Rehab</option>
+              <option>Fracture Recovery</option>
+              <option>Nerve Injury</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label">Surgery / Diagnosis Date</div>
+            <input class="control" id="surgery_date" name="surgery_date" type="date" required />
+          </div>
+          <div class="field full">
+            <div class="label">Affected Side</div>
+            <div class="radio-row">
+              <label class="chip"><input type="radio" name="affected_side" value="Left" required />Left</label>
+              <label class="chip"><input type="radio" name="affected_side" value="Right" />Right</label>
+              <label class="chip"><input type="radio" name="affected_side" value="Bilateral" />Bilateral</label>
+            </div>
+          </div>
+          <div class="field full">
+            <div class="label">Referring Doctor Name</div>
+            <input class="control" id="doctor_name" name="doctor_name" type="text" placeholder="e.g. Dr. Smith" required />
+          </div>
+          <div class="field">
+            <div class="label">Previous Therapy?</div>
+            <select class="control" id="prev_therapy" name="prev_therapy" required>
+              <option value="" selected>Select</option>
+              <option>Yes</option>
+              <option>No</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label">If Yes — Weeks Done</div>
+            <input class="control" id="prev_therapy_weeks" name="prev_therapy_weeks" type="number" min="1" step="1" placeholder="e.g. 6" />
+          </div>
+          <div class="field full">
+            <div class="label">Therapist Notes</div>
+            <textarea class="control" id="therapist_notes" name="therapist_notes" rows="4" placeholder="Enter specific observations, goals, or precautions…" required></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Session Setup -->
+      <div class="intake-card">
+        <h3>Session Setup</h3>
+        <div class="fields">
+          <div class="field">
+            <div class="label">Pain Level (0–10)</div>
+            <input class="control" id="pain_before" name="pain_before" type="number" min="0" max="10" step="1" value="3" required />
+          </div>
+          <div class="field">
+            <div class="label">Target Reps per Session</div>
+            <input class="control" id="target_reps" name="target_reps" type="number" min="1" step="1" value="50" required />
+          </div>
+          <div class="field">
+            <div class="label">Session Goal</div>
+            <select class="control" id="session_goal" name="session_goal" required>
+              <option value="" selected>Select</option>
+              <option>Improve ROM</option>
+              <option>Build Strength</option>
+              <option>Reduce Stiffness</option>
+              <option>Coordination</option>
+            </select>
+          </div>
+          <div class="field full">
+            <div class="label">Therapist / Supervisor Name</div>
+            <input class="control" id="therapist_name" name="therapist_name" type="text" placeholder="e.g. Alex" required />
+          </div>
+        </div>
+        <div class="intake-actions">
+          <button class="link-btn js-back-to-landing" type="button">← Back to home</button>
+          <button class="btn-primary" id="start-session" type="submit">
+            <span>Start Session</span>
+            <span style="opacity:0.85;">→</span>
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div><!-- /intake-view -->
+
+
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║   CONNECTION JS — Navigation + Form → renderer  ║
+     ╚══════════════════════════════════════════════════╝ -->
+<script>
+window.REHABSLASH_API = "https://YOUR-APP.onrender.com";
+</script>
+<script>
+(function () {
+  'use strict';
+
+  /* ─── view switcher ──────────────────────────────── */
+  function showView(id) {
+    ['landing-view', 'intake-view'].forEach(function (v) {
+      document.getElementById(v).classList.add('hidden');
+    });
+    document.getElementById(id).classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ─── landing → intake (every "Start Rehab" button) ─ */
+  document.querySelectorAll('.js-start-rehab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      showView('intake-view');
+    });
+  });
+
+  /* ─── intake → landing (back button + logo click) ── */
+  function goBackToLanding(e) {
+    if (e) e.preventDefault();
+    showView('landing-view');
+  }
+  document.getElementById('intake-back').addEventListener('click', goBackToLanding);
+  document.querySelectorAll('.js-back-to-landing').forEach(function (el) {
+    el.addEventListener('click', goBackToLanding);
+  });
+
+  /* ─── form validation helper ──────────────────────── */
+  var errBox = document.getElementById('intake-error');
+  function showError(msg) {
+    errBox.textContent = msg;
+    errBox.classList.remove('hidden');
+    errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function clearError() {
+    errBox.classList.add('hidden');
+    errBox.textContent = '';
+  }
+
+  /* ─── form submit → renderer.js ──────────────────── */
+  document.getElementById('intake-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearError();
+
+    /* collect all fields */
+    var d = {};
+    new FormData(this).forEach(function (val, key) { d[key] = val; });
+
+    /* --- validation --- */
+    if (!d.full_name || !d.full_name.trim())
+      return showError('Please enter the patient\'s full legal name.');
+    if (!d.age || isNaN(d.age) || parseInt(d.age, 10) < 1)
+      return showError('Please enter a valid age (minimum 1).');
+    if (!d.gender)
+      return showError('Please select a gender.');
+    if (!d.patient_id || !d.patient_id.trim())
+      return showError('Please enter a registry / patient ID.');
+    if (!d.condition)
+      return showError('Please select the clinical condition.');
+    if (!d.surgery_date)
+      return showError('Please enter the surgery / diagnosis date.');
+    if (!d.affected_side)
+      return showError('Please select the affected side (Left / Right / Bilateral).');
+    if (!d.doctor_name || !d.doctor_name.trim())
+      return showError('Please enter the referring doctor\'s name.');
+    if (!d.prev_therapy)
+      return showError('Please indicate whether the patient has had previous therapy.');
+    if (!d.therapist_notes || !d.therapist_notes.trim())
+      return showError('Please enter therapist notes before starting.');
+    var pain = parseInt(d.pain_before, 10);
+    if (d.pain_before === '' || isNaN(pain) || pain < 0 || pain > 10)
+      return showError('Pain level must be a number between 0 and 10.');
+    if (!d.target_reps || parseInt(d.target_reps, 10) < 1)
+      return showError('Please set a target reps value (minimum 1).');
+    if (!d.session_goal)
+      return showError('Please select a session goal.');
+    if (!d.therapist_name || !d.therapist_name.trim())
+      return showError('Please enter the therapist / supervisor name.');
+
+    /* --- hand-off to renderer.js --- */
+    if (window.GestureHealRenderer &&
+        typeof window.GestureHealRenderer.startSession === 'function') {
+      /* renderer.js is present — call it directly */
+      window.GestureHealRenderer.startSession(d);
+    } else {
+      /*
+       * renderer.js not yet available (running standalone / file not found).
+       * Store data globally and fire a custom event so renderer.js can still
+       * pick it up whenever it loads, even asynchronously.
+       */
+      window._gestureHealSessionData = d;
+      window.dispatchEvent(new CustomEvent('gestureheal:start', { detail: d }));
+      console.info(
+        '[GestureHeal] Session data is ready. ' +
+        'Ensure renderer.js defines window.GestureHealRenderer.startSession().\n',
+        d
+      );
+    }
+  });
+
+  /* ─── scroll-reveal observer ──────────────────────── */
+  var revealObserver = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(function (el) {
+    revealObserver.observe(el);
+  });
+
+  /* ─── nav shadow on scroll ────────────────────────── */
+  var landingNav = document.getElementById('landing-nav');
+  window.addEventListener('scroll', function () {
+    if (landingNav) {
+      landingNav.style.boxShadow =
+        window.scrollY > 20 ? '0 4px 24px rgba(15,20,40,0.08)' : 'none';
+    }
+  });
+
+  /* ─── smooth anchor scrolling (landing internal links) ─ */
+  document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      var href = a.getAttribute('href');
+      if (href === '#') return;
+      var target = document.querySelector(href);
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+}());
+</script>
+
+<!-- renderer.js loaded last — must expose window.GestureHealRenderer.startSession(data) -->
+<script src="renderer.js"></script>
+
+</body>
+</html>
