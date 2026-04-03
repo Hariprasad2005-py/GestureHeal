@@ -413,10 +413,10 @@ textarea.control { resize:vertical; }
         </strong>
       </div>
       <p class="hero-desc">An AI-powered system enabling patients to perform upper-limb rehabilitation using webcam-based gesture tracking and gamified exercises. Professional therapy, accessible from your own home.</p>
-     <div class="hero-cta">
-  <button class="btn-primary js-start-rehab" type="button">🚀 Start Rehab</button>
-  <a class="btn-ghost" href="https://github.com/Hariprasad2005-py/GestureHeal/releases/download/v1.0/GestureHeal.exe">⬇️ Download for Windows</a>
-</div>
+      <div class="hero-cta">
+        <button class="btn-primary js-start-rehab" type="button">🚀 Start Rehab</button>
+        <a class="btn-ghost" href="https://github.com/Hariprasad2005-py/GestureHeal/releases/download/v1.0/GestureHeal.exe">⬇️ Download for Windows</a>
+      </div>
       <div class="hero-visual">
         <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0j0jDyWWWMT6Juvz9NTThHpEVNA5kybFyz_mHPz8rEw42iarCtaQSVEGAKrNxwcuV2NuaYoCr12Qr4nIccNuTZU-oup3p7n4dVkXMVImIQhx-qNxX_54o9HkFt619Bn4DsqaTfqebb6Z7wfMvt72qh0HgvAFLOfbadTUIm8gjv0soVuilef0uf1fXaUdvvqQp_CqPYifDoh2zHwUx4TMQ3mSW6EJnySqYdZL6sJVrrQjmt9-ATZff8wQJLXsQ9uBPG_-y1ENseBU" alt="Clinical Accuracy via Computer Vision"/>
         <div class="hero-visual-overlay"></div>
@@ -766,13 +766,9 @@ textarea.control { resize:vertical; }
 </div><!-- /intake-view -->
 
 
-
 <!-- ╔══════════════════════════════════════════════════╗
      ║   CONNECTION JS — Navigation + Form → renderer  ║
      ╚══════════════════════════════════════════════════╝ -->
-<script>
-window.REHABSLASH_API = 'https://YOUR-RENDER-APP.onrender.com";
-</script>
 <script>
 (function () {
   'use strict';
@@ -783,6 +779,7 @@ window.REHABSLASH_API = 'https://YOUR-RENDER-APP.onrender.com";
       document.getElementById(v).classList.add('hidden');
     });
     document.getElementById(id).classList.remove('hidden');
+    document.body.style.overflow = '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -855,25 +852,31 @@ window.REHABSLASH_API = 'https://YOUR-RENDER-APP.onrender.com";
     if (!d.therapist_name || !d.therapist_name.trim())
       return showError('Please enter the therapist / supervisor name.');
 
-    /* --- hand-off to renderer.js --- */
-    if (window.GestureHealRenderer &&
-        typeof window.GestureHealRenderer.startSession === 'function') {
-      /* renderer.js is present — call it directly */
-      window.GestureHealRenderer.startSession(d);
-    } else {
-      /*
-       * renderer.js not yet available (running standalone / file not found).
-       * Store data globally and fire a custom event so renderer.js can still
-       * pick it up whenever it loads, even asynchronously.
-       */
-      window._gestureHealSessionData = d;
-      window.dispatchEvent(new CustomEvent('gestureheal:start', { detail: d }));
-      console.info(
-        '[GestureHeal] Session data is ready. ' +
-        'Ensure renderer.js defines window.GestureHealRenderer.startSession().\n',
-        d
-      );
-    }
+    /* --- Save to Render API then launch desktop app via protocol --- */
+    var btn = document.getElementById('start-session');
+    if (btn) btn.disabled = true;
+
+    fetch('https://gestureheal.onrender.com/api/intake', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(d)
+    })
+    .catch(function() { /* ignore, still launch */ })
+    .finally(function() {
+      if (btn) btn.disabled = false;
+      /* Encode intake as base64 and fire the custom protocol */
+      var payload = btoa(unescape(encodeURIComponent(JSON.stringify(d))));
+      var protocolUrl = 'rehabslash://start?data=' + encodeURIComponent(payload);
+
+      /* Show overlay */
+      var overlay = document.getElementById('launch-overlay');
+      if (overlay) overlay.classList.remove('hidden');
+
+      /* Small delay so overlay renders before browser switches */
+      setTimeout(function() {
+        window.location.href = protocolUrl;
+      }, 300);
+    });
   });
 
   /* ─── scroll-reveal observer ──────────────────────── */
@@ -914,8 +917,30 @@ window.REHABSLASH_API = 'https://YOUR-RENDER-APP.onrender.com";
 }());
 </script>
 
-<!-- renderer.js loaded last — must expose window.GestureHealRenderer.startSession(data) -->
-<script src="renderer.js"></script>
+<!-- Launch overlay -->
+<div id="launch-overlay" class="hidden" style="
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(10,15,35,0.95);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  backdrop-filter:blur(12px);color:white;text-align:center;padding:2rem;
+  font-family:var(--font-display);">
+  <div style="font-size:3.5rem;margin-bottom:1.25rem;">🖐️</div>
+  <h2 style="font-size:1.8rem;font-weight:800;margin-bottom:0.75rem;letter-spacing:-0.03em;">Launching GestureHeal…</h2>
+  <p style="color:rgba(255,255,255,0.6);font-size:1rem;max-width:440px;line-height:1.7;margin-bottom:1.5rem;">
+    Your browser is opening the desktop app with the patient data pre-loaded.
+  </p>
+  <p style="color:rgba(255,255,255,0.4);font-size:0.85rem;max-width:400px;line-height:1.6;">
+    Nothing happened? Make sure you have run the <strong style="color:white;">Windows installer</strong> first, then try again.
+  </p>
+  <a href="https://github.com/Hariprasad2005-py/GestureHeal/releases/download/v1.0/GestureHeal.exe"
+     style="margin-top:1.5rem;padding:0.75rem 1.8rem;background:#2558e8;color:white;
+            border-radius:12px;text-decoration:none;font-weight:700;font-size:0.9rem;">
+    ⬇️ Download App First
+  </a>
+  <button onclick="document.getElementById('launch-overlay').classList.add('hidden');document.body.style.overflow='';"
+    style="margin-top:1rem;background:none;border:none;color:rgba(255,255,255,0.35);
+           cursor:pointer;font-size:0.85rem;font-family:var(--font-body);">✕ Close</button>
+</div>
 
 </body>
 </html>
