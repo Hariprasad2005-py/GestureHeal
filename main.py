@@ -32,6 +32,27 @@ COLOR_GRAY      = (80, 90, 110)
 COLOR_GOLD      = (255, 200, 50)
 COLOR_PANEL     = (15, 22, 45)
 
+def load_intake_from_protocol_arg():
+    """
+    Reads intake data from rehabslash://start?data=<base64-json>
+    passed as a command-line argument by the browser protocol handler.
+    """
+    import base64, urllib.parse
+    for arg in sys.argv[1:]:
+        if arg.lower().startswith("rehabslash://"):
+            try:
+                parsed = urllib.parse.urlparse(arg)
+                qs     = urllib.parse.parse_qs(parsed.query)
+                b64    = qs.get("data", [None])[0]
+                if b64:
+                    padded = b64 + "=" * (-len(b64) % 4)
+                    raw    = base64.urlsafe_b64decode(padded).decode("utf-8")
+                    data   = json.loads(raw)
+                    return _normalize_intake(data)
+            except Exception as e:
+                print(f"[WARN] Could not parse protocol arg: {e}")
+    return None
+
 def _safe_patient_id(pid):
     return "".join(ch for ch in pid if ch.isalnum() or ch in ("-", "_")).strip()
 
@@ -814,8 +835,12 @@ def generate_report_pdf(intake, stats, session_id, output_path):
     doc.build(story, onFirstPage=decorate, onLaterPages=decorate)
 
 def main():
-    intake_path = os.environ.get("REHABSLASH_INTAKE_PATH") or os.path.join("data", "intake_latest.json")
-    intake = load_intake_from_json(intake_path) or run_intake_form()
+    intake = load_intake_from_protocol_arg()
+    if intake is None:
+        intake_path = os.environ.get("REHABSLASH_INTAKE_PATH") or os.path.join("data", "intake_latest.json")
+        intake = load_intake_from_json(intake_path)
+    if intake is None:
+        intake = run_intake_form()
     if not intake:
         return
 
